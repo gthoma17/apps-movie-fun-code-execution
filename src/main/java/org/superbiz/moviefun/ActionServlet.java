@@ -18,8 +18,11 @@ package org.superbiz.moviefun;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.superbiz.moviefun.movies.Movie;
+import org.superbiz.moviefun.movies.MoviesBean;
 
-import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -37,8 +40,14 @@ public class ActionServlet extends HttpServlet {
 
     public static int PAGE_SIZE = 5;
 
-    @EJB
-    private MoviesBean moviesBean;
+    private final MoviesBean moviesBean;
+    private final PlatformTransactionManager moviesTransactionManager;
+
+    public ActionServlet(MoviesBean moviesBean, PlatformTransactionManager moviesTransactionManager) {
+        this.moviesBean = moviesBean;
+        this.moviesTransactionManager = moviesTransactionManager;
+    }
+
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -62,18 +71,24 @@ public class ActionServlet extends HttpServlet {
             int year = Integer.parseInt(request.getParameter("year"));
 
             Movie movie = new Movie(title, director, genre, rating, year);
+            TransactionStatus transaction = moviesTransactionManager.getTransaction(null);
 
             moviesBean.addMovie(movie);
+
+            moviesTransactionManager.commit(transaction);
             response.sendRedirect("moviefun");
             return;
 
         } else if ("Remove".equals(action)) {
 
             String[] ids = request.getParameterValues("id");
+            TransactionStatus transaction = moviesTransactionManager.getTransaction(null);
+
             for (String id : ids) {
                 moviesBean.deleteMovieId(new Long(id));
             }
 
+            moviesTransactionManager.commit(transaction);
             response.sendRedirect("moviefun");
             return;
 
