@@ -4,10 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.superbiz.moviefun.albums.Album;
 import org.superbiz.moviefun.albums.AlbumFixtures;
@@ -39,6 +36,7 @@ public class HomeController {
         this.albumsTransactionManager = albumsTransactionManager;
     }
 
+
     @GetMapping("/")
     public String index() {
         return "index";
@@ -46,16 +44,17 @@ public class HomeController {
 
     @GetMapping("/setup")
     public String setup(Map<String, Object> model) {
-        addMovies();
-        addAlbums();
+        createMovies();
+        createAlbums();
 
         model.put("movies", moviesBean.getMovies());
         model.put("albums", albumsBean.getAlbums());
 
         return "setup";
     }
-    private void addAlbums() {
-        TransactionStatus transaction = albumsTransactionManager.getTransaction(null); // non intuitive way to new up a transaction
+
+    private void createAlbums() {
+        TransactionStatus transaction = albumsTransactionManager.getTransaction(null);
 
         for (Album album : albumFixtures.load()) {
             albumsBean.addAlbum(album);
@@ -63,8 +62,9 @@ public class HomeController {
 
         albumsTransactionManager.commit(transaction);
     }
-    private void addMovies() {
-        TransactionStatus transaction = moviesTransactionManager.getTransaction(null); // non intuitive way to new up a transaction
+
+    private void createMovies() {
+        TransactionStatus transaction = moviesTransactionManager.getTransaction(null);
 
         for (Movie movie : movieFixtures.load()) {
             moviesBean.addMovie(movie);

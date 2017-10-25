@@ -8,8 +8,8 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication(exclude = {
-        DataSourceAutoConfiguration.class,
-        HibernateJpaAutoConfiguration.class
+    DataSourceAutoConfiguration.class,
+    HibernateJpaAutoConfiguration.class
 })
 public class Application {
 

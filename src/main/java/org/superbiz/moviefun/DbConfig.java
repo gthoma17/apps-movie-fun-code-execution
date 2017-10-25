@@ -1,6 +1,8 @@
 package org.superbiz.moviefun;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -15,76 +17,83 @@ import javax.sql.DataSource;
 
 @Configuration
 public class DbConfig {
+
     @Bean
-    public HibernateJpaVendorAdapter hibernateJpaVendorAdapter(){
-        HibernateJpaVendorAdapter adapter = new HibernateJpaVendorAdapter();
-        adapter.setDatabase(Database.MYSQL);
-        adapter.setDatabasePlatform("org.hibernate.dialect.MySQL5Dialect");
-        adapter.setGenerateDdl(true);
-        return adapter;
+    HibernateJpaVendorAdapter jpaVendorAdapter() {
+        HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+        jpaVendorAdapter.setDatabase(Database.MYSQL);
+        jpaVendorAdapter.setDatabasePlatform("org.hibernate.dialect.MySQL5InnoDBDialect");
+        jpaVendorAdapter.setGenerateDdl(true);
+        return jpaVendorAdapter;
     }
 
-    private static DataSource buildDataSource(String url, String username, String password){
+
+    private static DataSource buildDataSource(String url, String username, String password) {
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setURL(url);
         dataSource.setUser(username);
         dataSource.setPassword(password);
-        return dataSource;
+        return createConnectionPool(dataSource);
     }
 
-    private static LocalContainerEntityManagerFactoryBean buildEntityManagerFactoryBean
-            (DataSource dataSource, HibernateJpaVendorAdapter jpaVendorAdapter, String unitName){
-        LocalContainerEntityManagerFactoryBean entityManagerFactoryBean = new LocalContainerEntityManagerFactoryBean();
-        entityManagerFactoryBean.setDataSource(dataSource);
-        entityManagerFactoryBean.setJpaVendorAdapter(jpaVendorAdapter);
-        entityManagerFactoryBean.setPackagesToScan(DbConfig.class.getPackage().getName());
-        entityManagerFactoryBean.setPersistenceUnitName("albums");
-        return entityManagerFactoryBean;
+    private static DataSource createConnectionPool(DataSource dataSource) {
+        HikariConfig config = new HikariConfig();
+        config.setDataSource(dataSource);
+        return new HikariDataSource(config);
     }
+
+    private static LocalContainerEntityManagerFactoryBean buildEntityManagerFactoryBean(DataSource dataSource, HibernateJpaVendorAdapter jpaVendorAdapter, String unitName) {
+        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
+        factoryBean.setDataSource(dataSource);
+        factoryBean.setJpaVendorAdapter(jpaVendorAdapter);
+        factoryBean.setPackagesToScan(DbConfig.class.getPackage().getName());
+        factoryBean.setPersistenceUnitName(unitName);
+        return factoryBean;
+    }
+
+
+    @Configuration
     public static class Movies {
         @Value("${moviefun.datasources.movies.url}") String url;
         @Value("${moviefun.datasources.movies.username}") String username;
         @Value("${moviefun.datasources.movies.password}") String password;
 
         @Bean
-        public DataSource moviesDataSource(){
+        public DataSource moviesDataSource() {
             return buildDataSource(url, username, password);
         }
 
         @Bean
         @Qualifier("movies")
-        LocalContainerEntityManagerFactoryBean moviesEntityManagerFactoryBean
-                (DataSource moviesDataSource, HibernateJpaVendorAdapter jpaVendorAdapter) {
+        LocalContainerEntityManagerFactoryBean moviesEntityManagerFactoryBean(DataSource moviesDataSource, HibernateJpaVendorAdapter jpaVendorAdapter) {
             return buildEntityManagerFactoryBean(moviesDataSource, jpaVendorAdapter, "movies");
         }
 
         @Bean
-        PlatformTransactionManager moviesTransactionManager
-                (@Qualifier("movies") LocalContainerEntityManagerFactoryBean factoryBean){
+        PlatformTransactionManager moviesTransactionManager(@Qualifier("movies") LocalContainerEntityManagerFactoryBean factoryBean) {
             return new JpaTransactionManager(factoryBean.getObject());
         }
     }
 
+    @Configuration
     public static class Albums {
         @Value("${moviefun.datasources.albums.url}") String url;
         @Value("${moviefun.datasources.albums.username}") String username;
         @Value("${moviefun.datasources.albums.password}") String password;
 
         @Bean
-        public DataSource albumsDataSource(){
+        public DataSource albumsDataSource() {
             return buildDataSource(url, username, password);
         }
 
         @Bean
         @Qualifier("albums")
-        LocalContainerEntityManagerFactoryBean albumsEntityManagerFactoryBean
-                (DataSource moviesDataSource, HibernateJpaVendorAdapter jpaVendorAdapter) {
-            return buildEntityManagerFactoryBean(moviesDataSource, jpaVendorAdapter, "albums");
+        LocalContainerEntityManagerFactoryBean albumsEntityManagerFactoryBean(DataSource albumsDataSource, HibernateJpaVendorAdapter jpaVendorAdapter) {
+            return buildEntityManagerFactoryBean(albumsDataSource, jpaVendorAdapter, "albums");
         }
 
         @Bean
-        PlatformTransactionManager albumsTransactionManager
-                (@Qualifier("albums") LocalContainerEntityManagerFactoryBean factoryBean){
+        PlatformTransactionManager albumsTransactionManager(@Qualifier("albums") LocalContainerEntityManagerFactoryBean factoryBean) {
             return new JpaTransactionManager(factoryBean.getObject());
         }
     }
