@@ -1,46 +1,52 @@
 package org.superbiz.moviefun;
 
-import java.io.*;
+import org.apache.tika.Tika;
+import org.apache.tika.io.IOUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Optional;
 
-public class FileStore implements BlobStore{
 
-    private final File BLOBSTORE_DIR = new File("blobs");
+
+public class FileStore implements BlobStore {
+
+    private final Tika tika = new Tika();
 
 
     @Override
     public void put(Blob blob) throws IOException {
-        String blobPath = BLOBSTORE_DIR.getCanonicalPath() +"/"+blob.name;
-        File targetFile = new File(blobPath);
-
-        byte[] buffer = new byte[blob.inputStream.available()];
-        blob.inputStream.read(buffer);
+        File targetFile = new File(blob.name);
 
         targetFile.delete();
         targetFile.getParentFile().mkdirs();
         targetFile.createNewFile();
 
-        FileOutputStream outputStream = new FileOutputStream(targetFile);
-        outputStream.write(buffer);
+
+        try (FileOutputStream outputStream = new FileOutputStream(targetFile)) {
+            IOUtils.copy(blob.inputStream, outputStream);
+        }
     }
 
     @Override
-    public Optional<Blob> get(String name) {
-        try {
-            String blobPath = BLOBSTORE_DIR.getCanonicalPath()  +"/"+name;
-            return (Optional<Blob>) new ObjectInputStream(new FileInputStream(blobPath)).readObject();
-        } catch (IOException  e) {
-            ; // NOOP
-        } catch (ClassNotFoundException e){
-            e.printStackTrace();
+    public Optional<Blob> get(String name) throws IOException {
+        File file = new File(name);
+
+        if (!file.exists()) {
+            return Optional.empty();
         }
-        return null;
+
+        return Optional.of(new Blob(
+                name,
+                new FileInputStream(file),
+                tika.detect(file)
+        ));
     }
 
     @Override
     public void deleteAll() {
-        for(File file: BLOBSTORE_DIR.listFiles())
-            if (!file.isDirectory())
-                file.delete();
+
     }
 }

@@ -1,12 +1,13 @@
 package org.superbiz.moviefun;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.amazonaws.util.IOUtils;
 
 import java.io.*;
+import java.util.List;
 import java.util.Optional;
 
 public class S3Store implements BlobStore {
@@ -27,21 +28,25 @@ public class S3Store implements BlobStore {
 
     @Override
     public Optional<Blob> get(String name) throws IOException {
-        if(s3.doesObjectExist(bucketName, name)){
-            S3Object s3Blob = s3.getObject(bucketName, name);
-            s3Blob.getObjectMetadata().getContentType();
+        if (!s3.doesObjectExist(bucketName, name)) {
+            return Optional.empty();
+        }
+        try(S3Object s3Blob = s3.getObject(bucketName, name)){
+            byte[] bytes = IOUtils.toByteArray(s3Blob.getObjectContent());
             return Optional.of(
                     new Blob(name, s3Blob.getObjectContent(), s3Blob.getObjectMetadata().getContentType())
             );
-        }
-        else{
-            return null;
         }
     }
 
     @Override
     public void deleteAll() {
-        s3.deleteBucket(bucketName);
-        s3.createBucket(bucketName);
+        List<S3ObjectSummary> summaries = s3
+                .listObjects(bucketName)
+                .getObjectSummaries();
+
+        for (S3ObjectSummary summary : summaries) {
+            s3.deleteObject(bucketName, summary.getKey());
+        }
     }
 }
