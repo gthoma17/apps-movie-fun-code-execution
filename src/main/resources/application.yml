@@ -12,3 +12,17 @@ spring:
   mvc.view:
     prefix: /WEB-INF/
     suffix: .jsp
+  jpa:
+    generate-ddl: true
+    properties.hibernate.dialect: org.hibernate.dialect.MySQL5Dialect
+  datasource:
+    url: jdbc:mysql://localhost:3306/movies?useSSL=false
+    username: root
+  mvc.view:
+    prefix: /WEB-INF/
+    suffix: .jsp
+s3:
+  endpointUrl: http://127.0.0.1:9000
+  accessKey: SRFAD1D3RTLQKKV0R68H
+  secretKey: lfUT/f4PzLYf6fJhDQS6s6m0O8En527lf4OxDWBC
+  bucketName: moviefun
