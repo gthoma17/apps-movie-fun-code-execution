@@ -16,6 +16,8 @@
  */
 package org.superbiz.moviefun.movies;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
@@ -31,11 +33,16 @@ public class MoviesBean {
     @PersistenceContext(unitName = "movies")
     private EntityManager entityManager;
 
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+
     public Movie find(Long id) {
         return entityManager.find(Movie.class, id);
     }
 
     public void addMovie(Movie movie) {
+        logger.debug("Creating movie with title " + movie.getTitle() +
+            ", and year " + movie.getYear());
+
         entityManager.persist(movie);
     }
 

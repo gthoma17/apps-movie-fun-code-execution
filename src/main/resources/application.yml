@@ -27,3 +27,5 @@ s3:
   accessKey: SRFAD1D3RTLQKKV0R68H
   secretKey: lfUT/f4PzLYf6fJhDQS6s6m0O8En527lf4OxDWBC
   bucketName: moviefun
+logging.level:
+    root: INFO
