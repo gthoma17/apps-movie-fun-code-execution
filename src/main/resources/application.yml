@@ -1,13 +1,6 @@
-moviefun:
-  datasources:
-    movies:
-      url: jdbc:mysql://localhost:3306/movies?useSSL=false
-      username: root
-      password:
-    albums:
-      url: jdbc:mysql://localhost:3306/albums?useSSL=false
-      username: root
-      password:
+rabbitmq:
+  uri: amqp://guest:guest@localhost
+  queue: my-rabbit-queue
 spring:
   mvc.view:
     prefix: /WEB-INF/
